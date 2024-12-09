@@ -14,11 +14,11 @@ import seaborn as sns
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import label_binarize
-import warnings
+# import warnings
 from wordcloud import WordCloud
 
 
-warnings.simplefilter(action='ignore', category=FutureWarning)
+# warnings.simplefilter(action='ignore', category=FutureWarning)
 @st.cache_data
 def load_data():
     data = pd.read_csv("data1.csv")
