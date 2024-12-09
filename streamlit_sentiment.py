@@ -188,7 +188,7 @@ elif choice == 'Item Code':
         st.write(f"### Sản phẩm được chọn: {product_name} (Mã sản phẩm: {product_id})")
         product_data = data[data["ma_san_pham"] == product_id]
 
-        positive_reviews, negative_reviews = process_feedback(data, product_id)
+        positive_reviews, negative_reviews = process_feedback(product_data, product_id)
 
         if positive_reviews is None or negative_reviews is None:
             st.warning("Không có dữ liệu phản hồi cho sản phẩm này.")
