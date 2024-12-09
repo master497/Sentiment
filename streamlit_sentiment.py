@@ -61,10 +61,26 @@ cm = confusion_matrix(y_test, y_pred, labels=[0, 1, 2])
 cr = classification_report(y_test, y_pred)
 
 y_prob = model.predict_proba(X_test)
-# roc = roc_auc_score(y_test, y_prob[:, 1])
 
-# product_mapping = dict(zip(filtered_products["ten_san_pham"], filtered_products["ma_san_pham"]))
-# product_id = product_mapping[product_name]
+#5.5/ ve wordcloud
+def process_feedback(data, product_id):
+    """
+    Xử lý phản hồi, trả về phản hồi tích cực và tiêu cực.
+    """
+    product_data = data[data["ma_san_pham"] == product_id]
+    if product_data.empty:
+        return None, None
+    positive_reviews = product_data[product_data["sentiment"] == "Positive"]
+    negative_reviews = product_data[product_data["sentiment"] == "Negative"]
+    return positive_reviews, negative_reviews
+
+def generate_wordcloud(reviews, title):
+    """
+    Tạo Word Cloud từ danh sách các nhận xét.
+    """
+    text = " ".join(reviews)
+    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
+    return wordcloud
 
 #5. Save models
 # luu model classication
@@ -77,17 +93,15 @@ pkl_tfidf = "tfidf_model.pkl"
 with open(pkl_tfidf, 'wb') as file:  
     pickle.dump(tfidf, file)
 
+feedback = 'feedback_processor.pkl'
+with open('feedback_processor.pkl', 'wb') as file:
+    pickle.dump(process_feedback, file)
+
+wordcloud = 'wordcloud_generator.pkl'
+with open('wordcloud_generator.pkl', 'wb') as file:
+    pickle.dump(generate_wordcloud, file)
+
 # idx = indices[product_name]
-
-
-#5.5/ ve wordcloud
-def generate_wordcloud(text, title):
-        wordcloud = WordCloud(width=800, height=400, background_color="white").generate(" ".join(text))
-        fig, ax = plt.subplots(figsize=(10, 5))
-        ax.imshow(wordcloud, interpolation="bilinear")
-        ax.axis("off")
-        ax.set_title(title, fontsize=16)
-        st.pyplot(fig)
 
 #6. Load models 
 # Đọc model
@@ -97,6 +111,12 @@ with open(pkl_filename, 'rb') as file:
 # doc model count len
 with open(pkl_tfidf, 'rb') as file:  
     tfidf_model = pickle.load(file)
+
+with open(feedback, 'rb') as file:
+    process_feedback = pickle.load(file)
+
+with open(wordcloud, 'rb') as file:
+    generate_wordcloud = pickle.load(file)
 
 #--------------
 # GUI
@@ -168,13 +188,11 @@ elif choice == 'Item Code':
         st.write(f"### Sản phẩm được chọn: {product_name} (Mã sản phẩm: {product_id})")
         product_data = data[data["ma_san_pham"] == product_id]
 
-        if product_data.empty:
-            st.warning("Không có dữ liệu phản hồi cho sản phẩm này.")
-        else:
-            positive_reviews = product_data[product_data["sentiment"] == "Positive"]
-            negative_reviews = product_data[product_data["sentiment"] == "Negative"]
+        positive_reviews, negative_reviews = process_feedback(data, product_id)
 
-    
+        if positive_reviews is None or negative_reviews is None:
+            st.warning("Không có dữ liệu phản hồi cho sản phẩm này.")
+        else: 
             st.write("### Đánh giá từ khách hàng")
             st.write(f"#### Số nhận xét tích cực: {len(positive_reviews)}")
             st.write(f"#### Số nhận xét tiêu cực: {len(negative_reviews)}")
@@ -183,11 +201,13 @@ elif choice == 'Item Code':
             st.write("### Word Cloud")
             if not positive_reviews.empty:
                 st.write("#### Positive Reviews:")
-                generate_wordcloud(positive_reviews["noi_dung_binh_luan_sau_xu_ly"], "Positive Reviews")
+                wc_positive = generate_wordcloud(positive_reviews["noi_dung_binh_luan_sau_xu_ly"], "Positive Reviews")
+                st.image(wc_positive.to_array(), caption="Positive Reviews")
 
             if not negative_reviews.empty:
                 st.write("#### Negative Reviews:")
-                generate_wordcloud(negative_reviews["noi_dung_binh_luan_sau_xu_ly"], "Negative Reviews")
+                wc_negative = generate_wordcloud(negative_reviews["noi_dung_binh_luan_sau_xu_ly"], "Negative Reviews")
+                st.image(wc_negative.to_array(), caption="Negative Reviews")
 
 elif choice == 'New Prediction':
     st.subheader("Select data")
